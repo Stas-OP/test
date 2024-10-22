@@ -1,0 +1,160 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Крутой кликер с прокачкой</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        #clickArea {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            cursor: pointer;
+            user-select: none;
+            transition: transform 0.1s;
+        }
+        #clickArea:active {
+            transform: scale(0.95);
+        }
+        #stats {
+            margin-top: 20px;
+            font-size: 18px;
+        }
+        #upgrades {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .upgrade {
+            margin: 5px;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="clickArea">Кликай!</div>
+    <div id="stats">
+        <div>Очки: <span id="score">0</span></div>
+        <div>Очков в секунду: <span id="pointsPerSecond">0</span></div>
+    </div>
+    <div id="upgrades">
+        <button class="upgrade" id="upgradeClick">Улучшить клик (Цена: 10)</button>
+        <button class="upgrade" id="upgradeAuto">Улучшить авто-клик (Цена: 50)</button>
+    </div>
+    <script>
+        let tg = window.Telegram.WebApp;
+        tg.expand();
+
+        let score = 0;
+        let clickPower = 1;
+        let autoClickPower = 0;
+        let clickUpgradePrice = 10;
+        let autoUpgradePrice = 50;
+
+        const clickArea = document.getElementById('clickArea');
+        const scoreElement = document.getElementById('score');
+        const pointsPerSecondElement = document.getElementById('pointsPerSecond');
+        const upgradeClickButton = document.getElementById('upgradeClick');
+        const upgradeAutoButton = document.getElementById('upgradeAuto');
+
+        function updateDisplay() {
+            scoreElement.textContent = Math.floor(score);
+            pointsPerSecondElement.textContent = autoClickPower;
+            upgradeClickButton.textContent = `Улучшить клик (Цена: ${clickUpgradePrice})`;
+            upgradeAutoButton.textContent = `Улучшить авто-клик (Цена: ${autoUpgradePrice})`;
+        }
+
+        clickArea.addEventListener('click', () => {
+            score += clickPower;
+            updateDisplay();
+        });
+
+        upgradeClickButton.addEventListener('click', () => {
+            if (score >= clickUpgradePrice) {
+                score -= clickUpgradePrice;
+                clickPower++;
+                clickUpgradePrice = Math.floor(clickUpgradePrice * 1.5);
+                updateDisplay();
+            }
+        });
+
+        upgradeAutoButton.addEventListener('click', () => {
+            if (score >= autoUpgradePrice) {
+                score -= autoUpgradePrice;
+                autoClickPower++;
+                autoUpgradePrice = Math.floor(autoUpgradePrice * 1.5);
+                updateDisplay();
+            }
+        });
+
+        setInterval(() => {
+            score += autoClickPower;
+            updateDisplay();
+        }, 1000);
+
+        // Применяем тему Telegram
+        function applyTheme() {
+            document.body.style.backgroundColor = tg.themeParams.bg_color;
+            document.body.style.color = tg.themeParams.text_color;
+            clickArea.style.backgroundColor = tg.themeParams.button_color;
+            clickArea.style.color = tg.themeParams.button_text_color;
+            document.querySelectorAll('.upgrade').forEach(button => {
+                button.style.backgroundColor = tg.themeParams.button_color;
+                button.style.color = tg.themeParams.button_text_color;
+            });
+        }
+
+        // Сохранение прогресса
+        function saveProgress() {
+            localStorage.setItem('clickerProgress', JSON.stringify({
+                score,
+                clickPower,
+                autoClickPower,
+                clickUpgradePrice,
+                autoUpgradePrice
+            }));
+        }
+
+        // Загрузка прогресса
+        function loadProgress() {
+            const savedProgress = localStorage.getItem('clickerProgress');
+            if (savedProgress) {
+                const progress = JSON.parse(savedProgress);
+                score = progress.score;
+                clickPower = progress.clickPower;
+                autoClickPower = progress.autoClickPower;
+                clickUpgradePrice = progress.clickUpgradePrice;
+                autoUpgradePrice = progress.autoUpgradePrice;
+                updateDisplay();
+            }
+        }
+
+        // Инициализация
+        tg.ready(() => {
+            applyTheme();
+            loadProgress();
+            setInterval(saveProgress, 5000); // Сохраняем прогресс каждые 5 секунд
+        });
+    </script>
+</body>
+</html>
